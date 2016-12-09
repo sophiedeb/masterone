@@ -1,4 +1,4 @@
-'es# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 Created on Sun Nov 13 20:19:05 2016
 #from http://hplgit.github.io/teamods/cyode/cyode-sphinx/main_cyode.html
