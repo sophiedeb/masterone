@@ -21,7 +21,7 @@ S = 100                              # number of species in the metacommunity
 s = 80                               # number of species in each local community
 LCs = 500                            # number of local communities
 sites = 5000                         # number of lattice sites
-connectance = 1                      # the connectance
+connectance = 0.4                    # the connectance
 
 SIS = [20]
 SISfactor_ = 200
@@ -44,12 +44,15 @@ omega = [[random.uniform(-maxint,maxint) for _ in range(S+1)] for _ in range(S+1
 for i in range(1,S+1):
     for j in range(1,S+1):
         if random.uniform(0,1) <= 1.-connectance:
-            omega[i][j] = 0
+            omega[i][j] = 0            if A not in SIS:
 
 for i in range(S+1):
+    if i not in SIS:
+        omega[i][i] = -1.
+    else:
+        omega[i][i] = -1./SISfactor_
     omega[i][0] = random.uniform(0,1)
     omega[0][i] = 0
-    omega[i][i] = -1.
 
 # immigration rates
 mu = [random.uniform(minmigration,maxmigration) for _ in range(S+1)]
@@ -60,11 +63,11 @@ e = [random.uniform(minextinction,maxextinction) for _ in range(S+1)]
 e[0] = 0
 
 # save everything for later use and/or reference
-np.savetxt("omega.txt",omega)
-np.savetxt("mu.txt",mu)
-np.savetxt("e.txt",e)
-np.savetxt("SIS.txt",SIS)
-np.savetxt("SISfactor.txt",SISfactor)
+np.savetxt(str(connectance)+"/omega.txt",omega)
+#np.savetxt("mu.txt",mu)
+#np.savetxt("e.txt",e)
+#np.savetxt("SIS.txt",SIS)
+#np.savetxt("SISfactor.txt",SISfactor)
 
 #-------------------------------------------------------------------------------
 #           the loop describes the interaction in one community
@@ -94,7 +97,7 @@ def Loop(u):
 
     # I don't have an actual convergence criterium due to the big fluctuations,
     # but 250 is always enough (most of the time even 50 is enough)
-    for t in range(250):
+    for t in range(100):
         # initialize the so-called "interaction vector"
         y = [0 for _ in range(S+1)]
         for i in range(S+1):
@@ -121,24 +124,25 @@ def Loop(u):
         for interaction in range(q):
             A = random.choice(xlatt)
             B = random.choice(ylatt)
-            ext = True
+
             if omega[A][B] < 0 and random.uniform(0,1) <= abs(omega[A][B]):
                 if xtemp[A] > 0:
                     xtemp[0] += 1
                     xtemp[A] -= 1
-                    ext = False
             elif omega[A][B] > 0 and random.uniform(0,1) <= omega[A][B]:
                 if xtemp[0] > 0:
                     xtemp[0] -= 1
                     xtemp[A] += 1
 
+        for event in range(sites):
+            A = random.choice(xlatt)
             if A == 0:
                 C = random.choice(specieslist)
                 if random.uniform(0,1) <= mu[C]:
                     xtemp[0] -= 1
                     xtemp[C] += 1
             else:
-                if random.uniform(0,1) <= e[A] and xtemp[A] > 0 and ext:
+                if random.uniform(0,1) <= e[A] and xtemp[A] > 0:
                     xtemp[0] += 1
                     xtemp[A] -= 1
 
@@ -154,6 +158,6 @@ def Loop(u):
 pool = multiprocessing.Pool(num_cores)
 equilibria = pool.map(Loop, range(1, LCs+1, 1))
 
-np.savetxt("equilibria.txt", equilibria)
+np.savetxt(str(connectance)+"/equilibria.txt", equilibria)
 
 print("Done!")
